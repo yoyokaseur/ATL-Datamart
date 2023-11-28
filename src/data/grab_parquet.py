@@ -6,7 +6,19 @@ import sys
 prefix_url = 'https://d37ci6vzurychx.cloudfront.net/trip-data' #_2018-01.parquet'
 
 def main():
-    grab_data()
+    client = Minio(
+        "localhost:9000",
+        secure=False,
+        access_key="minio",
+        secret_key="minio123"
+    )
+    bucket: str = "datalake"
+    found = client.bucket_exists(bucket)
+    if not found:
+        return 1
+    for obj in client.list_objects(bucket_name=bucket, prefix='yellow_tripdata_'):
+        print(obj.object_name)
+    # grab_data()
     return 0
 
 def get_filename(years : int, month : int):
