@@ -8,7 +8,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 
-def write_data_postgres(dataframe: pd.DataFrame) -> bool:
+def write_data_postgres(dataframe: pd.DataFrame, name : str) -> bool:
     """
     Dumps a Dataframe to the DBMS engine
 
@@ -38,8 +38,9 @@ def write_data_postgres(dataframe: pd.DataFrame) -> bool:
         engine = create_engine(db_config["database_url"])
         with engine.connect():
             success: bool = True
-            print("Connection successful! Processing parquet file")
+            print("Connection successful! Processing parquet file", name)
             dataframe.to_sql(db_config["dbms_table"], engine, index=False, if_exists='append')
+            print(f"Succes to download the file {name} to the table nyc_raw of database nyc_warehouse")
 
     except Exception as e:
         success: bool = False
@@ -74,8 +75,12 @@ def main() -> None:
     if not found:
         return 1
     client.list_objects(bucket_name=bucket, prefix='yellow_tripdata_')
+    i = 0
 
-    for object in client.list_objects(bucket_name=bucket, prefix='yellow_tripdata_'):
+    for object in client.list_objects(bucket_name=bucket, prefix='yellow_tripdata_'): #! retry to download the 03
+        if i < 2:
+            i = i + 1
+            continue
         obj = client.get_object( bucket_name=bucket, object_name=object.object_name )
         data = io.BytesIO()
         data.write(obj.read())
@@ -84,7 +89,7 @@ def main() -> None:
         parquet_df = pd.DataFrame = pd.read_parquet(data, engine='fastparquet')
 
         clean_column_name(parquet_df)
-        if not write_data_postgres(parquet_df):
+        if not write_data_postgres(parquet_df, object.object_name):
             del parquet_df
             gc.collect()
             return
