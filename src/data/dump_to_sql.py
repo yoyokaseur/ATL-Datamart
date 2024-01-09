@@ -25,7 +25,6 @@ def write_data_postgres(dataframe: pd.DataFrame, name : str) -> bool:
         "dbms_password": "admin",
         "dbms_ip": "localhost",
         "dbms_port": "15432",
-        # "dbms_port": "5432",
         "dbms_database": "nyc_warehouse",
         "dbms_table": "nyc_raw"
     }
